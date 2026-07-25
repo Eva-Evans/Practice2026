@@ -1,0 +1,16 @@
+# src/configs/datasets/asvspoof.yaml
+train:
+  _target_: src.datasets.asvspoof_dataset.ASVSpoofDataset
+  protocol_path: "../Practice2026dataset/LA/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt"
+  audio_dir: "../Practice2026dataset/LA/LA/ASVspoof2019_LA_train/flac/"
+  n_fft: 512
+  hop_length: 160
+  max_len: 600
+
+val:
+  _target_: src.datasets.asvspoof_dataset.ASVSpoofDataset
+  protocol_path: "../Practice2026dataset/LA/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev.trl.txt"
+  audio_dir: "../Practice2026dataset/LA/LA/ASVspoof2019_LA_dev/flac/"
+  n_fft: 512
+  hop_length: 160
+  max_len: 600

@@ -34,12 +34,11 @@ class Trainer(BaseTrainer):
             metric_funcs = self.metrics["train"]
             self.optimizer.zero_grad()
 
-        outputs = self.model(**batch)
-        batch.update(outputs)
+        logits = self.model(batch["data_object"])
+        batch["logits"] = logits
 
-        all_losses = self.criterion(**batch)
-        batch.update(all_losses)
-
+        all_losses = self.criterion(logits, batch["labels"])
+        batch["loss"] = all_losses
         if self.is_train:
             batch["loss"].backward()  # sum of all losses is always called loss
             self._clip_grad_norm()
