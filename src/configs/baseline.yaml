@@ -37,8 +37,9 @@ writer:
   _target_: src.logger.CometMLWriter
   project_name: "anti_spoof"
   run_name: "lcnn_baseline"
-  mode: "offline"
+  mode: "online"
   #offline: True
+  log_checkpoints: True
   workspace: null
   id_length: 32
   run_id: null

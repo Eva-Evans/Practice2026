@@ -119,12 +119,20 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
-        outputs = self.model(**batch)
+        if isinstance(batch, dict):
+            outputs = self.model(batch["data_object"])
+        else:
+            outputs = self.model(batch[0])
         batch.update(outputs)
+
+        batch["logits"] = outputs
 
         if metrics is not None:
             for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch))
+                if isinstance(batch, dict):
+                    metrics.update(met.name, met(batch["logits"], batch.get("labels")))
+                else:
+                    metrics.update(met.name, met(batch))
 
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk

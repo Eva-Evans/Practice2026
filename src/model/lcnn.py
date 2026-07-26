@@ -108,7 +108,7 @@ class LCNN(nn.Module):
         self.bn7 = nn.BatchNorm1d(80)
         self.fc2 = nn.Linear(80, num_classes)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         if isinstance(x, dict):
             x = x["data_object"]
 
