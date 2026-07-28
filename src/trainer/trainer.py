@@ -7,6 +7,10 @@ class Trainer(BaseTrainer):
     Trainer class. Defines the logic of batch logging and processing.
     """
 
+    def __init__(self, *args, criterion_angular=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.criterion_angular = criterion_angular
+
     def process_batch(self, batch, metrics: MetricTracker):
         """
         Run batch through the model, compute metrics, compute loss,
@@ -34,17 +38,17 @@ class Trainer(BaseTrainer):
             metric_funcs = self.metrics["train"]
             self.optimizer.zero_grad()
 
-        logits = self.model(batch["data_object"])
-        batch["logits"] = logits
+        if self.criterion_angular is not None:
+            embeddings = self.model.get_features(batch["data_object"])
+            logits = self.criterion_angular(embeddings, batch["labels"])
+            batch["logits"] = logits
+            all_losses = self.criterion(logits, batch["labels"])
+        else:
+            logits = self.model(batch["data_object"])
+            batch["logits"] = logits
+            all_losses = self.criterion(logits, batch["labels"])
 
-        all_losses = self.criterion(logits, batch["labels"])
         batch["loss"] = all_losses
-        if self.is_train:
-            batch["loss"].backward()  # sum of all losses is always called loss
-            self._clip_grad_norm()
-            self.optimizer.step()
-            if self.lr_scheduler is not None:
-                self.lr_scheduler.step()
 
         # update metrics for each loss (in case of multiple losses)
         for loss_name in self.config.writer.loss_names:
