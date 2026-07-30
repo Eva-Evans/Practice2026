@@ -6,7 +6,8 @@ from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
 from src.datasets.data_utils import get_dataloaders
-from src.model.lcnn import AngularSoftmax
+
+# from src.model.lcnn import AngularSoftmax
 from src.trainer import Trainer
 from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 
@@ -45,7 +46,8 @@ def main(config):
     # get function handles of loss and metrics
     loss_function = torch.nn.CrossEntropyLoss().to(device)
 
-    criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=4).to(device)
+    # criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=4).to(device)
+    # criterion_angular = None
 
     metrics = instantiate(config.metrics)
 
@@ -72,7 +74,8 @@ def main(config):
         writer=writer,
         batch_transforms=batch_transforms,
         skip_oom=config.trainer.get("skip_oom", True),
-        criterion_angular=criterion_angular,
+        # criterion_angular=criterion_angular,
+        # criterion_angular=None,
     )
 
     trainer.train()

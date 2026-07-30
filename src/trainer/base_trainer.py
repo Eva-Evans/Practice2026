@@ -397,6 +397,10 @@ class BaseTrainer:
         if isinstance(parameters, torch.Tensor):
             parameters = [parameters]
         parameters = [p for p in parameters if p.grad is not None]
+
+        if len(parameters) == 0:
+            return 0.0
+
         total_norm = torch.norm(
             torch.stack([torch.norm(p.grad.detach(), norm_type) for p in parameters]),
             norm_type,
