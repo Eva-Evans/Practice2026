@@ -50,12 +50,12 @@ class Trainer(BaseTrainer):
 
         batch["loss"] = all_losses
 
-        if batch_idx % 100 == 0:  # каждые 100 батчей
-            print(f"[DEBUG] Loss: {batch['loss'].item():.4f}")
-            if self.criterion_angular is not None:
-                print(f"[DEBUG] Using A-Softmax")
-            else:
-                print(f"[DEBUG] Using CrossEntropy")
+        # if batch_idx % 100 == 0:  # каждые 100 батчей
+        #     print(f"[DEBUG] Loss: {batch['loss'].item():.4f}")
+        #     if self.criterion_angular is not None:
+        #         print(f"[DEBUG] Using A-Softmax")
+        #     else:
+        #         print(f"[DEBUG] Using CrossEntropy")
 
         if self.is_train:
             batch["loss"].backward()
