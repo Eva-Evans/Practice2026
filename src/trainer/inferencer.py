@@ -146,12 +146,15 @@ class Inferencer(BaseTrainer):
             logits = batch["logits"][i].clone()
             label = batch["labels"][i].clone()
             pred_label = logits.argmax(dim=-1)
+            probs = torch.softmax(logits, dim=-1)
+            score = probs[1]
 
             output_id = current_id + i
 
             output = {
                 "pred_label": pred_label,
                 "label": label,
+                "score": score,
             }
 
             if self.save_path is not None:
