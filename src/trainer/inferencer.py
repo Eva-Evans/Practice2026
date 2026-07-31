@@ -148,7 +148,6 @@ class Inferencer(BaseTrainer):
             pred_label = logits.argmax(dim=-1)
             probs = torch.softmax(logits, dim=-1)
             score = probs[1]
-            key = batch["key"][i]
 
             output_id = current_id + i
 
@@ -156,7 +155,6 @@ class Inferencer(BaseTrainer):
                 "pred_label": pred_label,
                 "label": label,
                 "score": score,
-                "key": key,
             }
 
             if self.save_path is not None:
