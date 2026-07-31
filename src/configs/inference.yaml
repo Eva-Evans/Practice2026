@@ -10,4 +10,4 @@ inferencer:
   device: auto # device name or "auto"
   save_path: "predictions.csv" # any name here, can be a dataset name
   seed: 42
-  from_pretrained: "saved/lcnn_baseline/checkpoint-epoch10-25380.pth"  # path to the pretrained model
+  from_pretrained: "saved/lcnn_baseline/checkpoint-epoch21-53298.pth"  # path to the pretrained model
