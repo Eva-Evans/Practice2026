@@ -147,7 +147,7 @@ class Inferencer(BaseTrainer):
             label = batch["labels"][i].clone()
             pred_label = logits.argmax(dim=-1)
             probs = torch.softmax(logits, dim=-1)
-            score = probs[1]
+            score = probs[0]
 
             output_id = current_id + i
 
