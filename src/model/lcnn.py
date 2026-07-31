@@ -256,7 +256,7 @@ class AngularSoftmax(nn.Module):
 
         # W
         self.weight = nn.Parameter(torch.FloatTensor(out_features, in_features))
-        nn.init.xavier_uniform_(self.weight)
+        nn.init.kaiming_normal_(self.weight, mode='fan_out', nonlinearity='relu')
 
         self.lambda_min = lambda_min
         self.lambda_max = lambda_max
