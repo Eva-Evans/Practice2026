@@ -72,6 +72,11 @@ def main(config):
     # build model architecture, then print to console
     model = instantiate(config.model).to(device)
     logger.info(model)
+    sample_batch = next(iter(train_loader))
+    sample_input = sample_batch["data_object"].unsqueeze(1).to(device)  # [batch, 1, freq, time]
+    with torch.no_grad():
+        _ = model(sample_input)
+    logger.info(f"Model materialized with input shape: {sample_input.shape}")
 
     # total_params = sum(p.numel() for p in model.parameters())
     # trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
