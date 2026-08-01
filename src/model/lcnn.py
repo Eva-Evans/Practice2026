@@ -110,7 +110,7 @@ class LCNN(nn.Module):
         self.fc1 = nn.Linear(32, 160)
         self.mfm10 = MFM()
         self.bn7 = nn.BatchNorm1d(80)
-        self.fc2 = nn.Linear(80, num_classes)
+        # self.fc2 = nn.Linear(80, num_classes)
 
         self._initialize_weights()
 
@@ -162,7 +162,7 @@ class LCNN(nn.Module):
         x = self.fc1(x)
         x = self.mfm10(x)
         x = self.bn7(x)
-        x = self.fc2(x)
+        # x = self.fc2(x)
 
         return x
 
@@ -313,4 +313,35 @@ class AngularSoftmax(nn.Module):
         #print(f"logits min: {logits.min().item():.2f}, max: {logits.max().item():.2f}")
 
         return logits
+
+
+class LCNNWithAngularSoftmax(nn.Module):
+    def __init__(self, num_classes=2, m=4, lambda_min=5.0, lambda_max=1000.0, **kwargs):
+        super().__init__()
+        
+        # Backbone без fc2
+        self.backbone = LCNN(num_classes=num_classes, **kwargs)
+        
+        # AngularSoftmax слой
+        self.angular = AngularSoftmax(
+            in_features=80, 
+            out_features=num_classes,
+            m=m,
+            lambda_min=lambda_min,
+            lambda_max=lambda_max
+        )
+        
+    def forward(self, x, labels=None):
+        # Получаем признаки
+        features = self.backbone(x)
+        
+        # Если есть метки - вычисляем логиты через AngularSoftmax
+        if labels is not None:
+            logits = self.angular(features, labels)
+            return logits
+        else:
+            # Для инференса возвращаем признаки
+            return features
     
+    def get_features(self, x):
+        return self.backbone.get_features(x)

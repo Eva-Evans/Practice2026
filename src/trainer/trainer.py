@@ -7,8 +7,12 @@ class Trainer(BaseTrainer):
     Trainer class. Defines the logic of batch logging and processing.
     """
 
-    def __init__(self, *args, criterion_angular=None, **kwargs):
+    def __init__(self, *args, criterion, optimizer, device, criterion_angular, **kwargs):
         super().__init__(*args, **kwargs)
+        self.criterion = criterion  # Это должен быть nn.CrossEntropyLoss()
+        self.optimizer = optimizer
+        self.device = device
+
         self.criterion_angular = criterion_angular
 
     def process_batch(self, batch, metrics: MetricTracker):
