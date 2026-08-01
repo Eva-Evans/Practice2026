@@ -42,7 +42,7 @@ def main(config):
     model = instantiate(config.model).to(device)
     logger.info(model)
 
-    criterion = AngularSoftmax(
+    criterion_angular = AngularSoftmax(
         in_features=80, 
         out_features=2, 
         m=4,
@@ -63,6 +63,8 @@ def main(config):
     optimizer = instantiate(config.optimizer, params=trainable_params)
     lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
 
+    criterion = torch.nn.CrossEntropyLoss().to(device)
+
     # epoch_len = number of iterations for iteration-based training
     # epoch_len = None or len(dataloader) for epoch-based training
     epoch_len = config.trainer.get("epoch_len")
@@ -82,7 +84,7 @@ def main(config):
         writer=writer,
         batch_transforms=batch_transforms,
         skip_oom=config.trainer.get("skip_oom", True),
-        # criterion_angular=criterion_angular,
+        criterion_angular=criterion_angular,
         # criterion_angular=None,
     )
 
