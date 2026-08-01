@@ -42,6 +42,17 @@ def main(config):
     model = instantiate(config.model).to(device)
     logger.info(model)
 
+    print("\n" + "="*60)
+    print("MODEL WEIGHTS STATISTICS:")
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(f"  {name}: mean={param.data.mean():.6f}, std={param.data.std():.6f}")
+            if torch.isnan(param).any():
+                print(f"    WARNING: NaN found in {name}")
+            if torch.isinf(param).any():
+                print(f"    WARNING: Inf found in {name}")
+    print("="*60 + "\n")
+
     criterion_angular = AngularSoftmax(
         in_features=80, 
         out_features=2, 

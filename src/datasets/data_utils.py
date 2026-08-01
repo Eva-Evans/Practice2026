@@ -1,3 +1,4 @@
+import torch
 from itertools import repeat
 
 from hydra.utils import instantiate
@@ -84,5 +85,27 @@ def get_dataloaders(config, device):
             worker_init_fn=set_worker_seed,
         )
         dataloaders[dataset_partition] = partition_dataloader
+
+
+    if "train" in dataloaders:
+        train_loader = dataloaders["train"]
+        test_batch = next(iter(train_loader))
+        data = test_batch["data_object"]
+        print("=" * 60)
+        print("DATA STATISTICS:")
+        print(f"  Data shape: {data.shape}")
+        print(f"  Data dtype: {data.dtype}")
+        print(f"  Data min: {data.min():.4f}")
+        print(f"  Data max: {data.max():.4f}")
+        print(f"  Data mean: {data.mean():.4f}")
+        print(f"  Data std: {data.std():.4f}")
+        
+        # Проверка меток
+        if "labels" in test_batch:
+            labels = test_batch["labels"]
+            print(f"  Labels shape: {labels.shape}")
+            print(f"  Unique labels: {torch.unique(labels)}")
+            print(f"  Label distribution: {torch.bincount(labels)}")
+        print("=" * 60)
 
     return dataloaders, batch_transforms

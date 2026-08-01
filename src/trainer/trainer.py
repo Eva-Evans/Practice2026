@@ -22,6 +22,7 @@ class Trainer(BaseTrainer):
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
+        self._batch_idx = 0 
 
     def process_batch(self, batch, metrics: MetricTracker):
         """
@@ -62,13 +63,21 @@ class Trainer(BaseTrainer):
 
         batch["loss"] = all_losses
 
-        # if batch_idx % 100 == 0:  # каждые 100 батчей
-        #     print(f"[DEBUG] Loss: {batch['loss'].item():.4f}")
-        #     if self.criterion_angular is not None:
-        #         print(f"[DEBUG] Using A-Softmax")
-        #     else:
-        #         print(f"[DEBUG] Using CrossEntropy")
+        if self._batch_idx % 100 == 0:  # нужно добавить self._batch_idx
+            total_norm = 0
+            for p in self.model.parameters():
+                if p.grad is not None:
+                    param_norm = p.grad.data.norm(2)
+                    total_norm += param_norm.item() ** 2
+            total_norm = total_norm ** 0.5
+            print(f"  Gradient norm: {total_norm:.4f}")
+            
+            # Проверка на взрыв
+            if total_norm > 100:
+                print("  WARNING: Gradient explosion detected!")
 
+        self._batch_idx += 1 
+        
         if self.is_train:
             batch["loss"].backward()
             self._clip_grad_norm()

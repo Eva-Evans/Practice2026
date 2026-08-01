@@ -33,7 +33,8 @@ class MFM(nn.Module):
         super().__init__()
 
     def forward(self, x):
-        # print(f"MFM input shape: {x.shape}")
+        if x.size(1) % 2 != 0:
+            print(f"WARNING: MFM got odd channel dimension: {x.size(1)}")
         return torch.max(x[:, : (x.size(1) // 2)], x[:, (x.size(1) // 2) :])
 
 
@@ -311,6 +312,13 @@ class AngularSoftmax(nn.Module):
         logits = logits * x_norm_orig
 
         #print(f"logits min: {logits.min().item():.2f}, max: {logits.max().item():.2f}")
+        print(f"x_norm shape: {x_norm.shape}")
+        print(f"w_norm shape: {w_norm.shape}")
+        print(f"cos_theta range: [{cos_theta.min():.3f}, {cos_theta.max():.3f}]")
+        print(f"cos_theta_yi range: [{cos_theta_yi.min():.3f}, {cos_theta_yi.max():.3f}]")
+        print(f"logits range: [{logits.min():.3f}, {logits.max():.3f}]")
+    
+
 
         return logits
 
