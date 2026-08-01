@@ -73,11 +73,10 @@ def main(config):
     model = instantiate(config.model).to(device)
     logger.info(model)
 
-    # Добавить логирование количества параметров
-    total_params = sum(p.numel() for p in model.parameters())
-    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    logger.info(f"Total parameters: {total_params:,}")
-    logger.info(f"Trainable parameters: {trainable_params:,}")
+    # total_params = sum(p.numel() for p in model.parameters())
+    # trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    # logger.info(f"Total parameters: {total_params:,}")
+    # logger.info(f"Trainable parameters: {trainable_params:,}")
 
     # get function handles of loss and metrics
     loss_function = torch.nn.CrossEntropyLoss().to(device)
