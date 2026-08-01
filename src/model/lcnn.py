@@ -114,6 +114,10 @@ class LCNN(nn.Module):
     def forward(self, x, **kwargs):
         if isinstance(x, dict):
             x = x["data_object"]
+        if x.dim() == 3:  # [batch, freq, time]
+            x = x.unsqueeze(1)  # [batch, 1, freq, time]
+        elif x.dim() == 2:  # [freq, time] (без batch)
+            x = x.unsqueeze(0).unsqueeze(1)  # [1, 1, freq, time]
 
         x = self.conv1(x)
         x = self.mfm1(x)
@@ -160,7 +164,7 @@ class LCNN(nn.Module):
         x = self.mfm10(x)
         x = self.bn7(x)
         x = self.fc2(x)
-        
+
         return x
 
     def get_features(self, x):

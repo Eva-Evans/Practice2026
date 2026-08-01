@@ -60,7 +60,7 @@ class ASVSpoofDataset(Dataset):
             pad = self.max_len - spectrogram.shape[1]
             spectrogram = torch.nn.functional.pad(spectrogram, (0, pad))
 
-        spectrogram = spectrogram.unsqueeze(0)
+        # spectrogram = spectrogram.unsqueeze(0)
 
         # if spectrogram.dim() == 5:
         #     spectrogram = spectrogram.squeeze(2)
