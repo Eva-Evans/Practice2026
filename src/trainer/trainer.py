@@ -8,6 +8,7 @@ class Trainer(BaseTrainer):
     """
 
     def __init__(self, model, criterion, optimizer, device, **kwargs):
+        self.criterion_angular = kwargs.pop('criterion_angular', None)
         metrics = kwargs.pop('metrics', None)
         super().__init__(model, criterion, optimizer, device, **kwargs)
         self.criterion = criterion
