@@ -73,7 +73,7 @@ def get_dataloaders(config, device):
         for i in range(len(train_dataset)):
             sample = train_dataset[i]
             if "labels" in sample:
-                all_labels.append(sample["labels"].item())
+                all_labels.append(sample["labels"])
         
         if all_labels:
             all_labels = torch.tensor(all_labels)
