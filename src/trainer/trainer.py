@@ -54,14 +54,10 @@ class Trainer(BaseTrainer):
 
         batch["loss"] = all_losses
 
-        # Исправлено: batch["loss"] вместо loss, добавлены self.epoch и batch_idx
+        # Исправлено: batch["loss"] вместо loss
         if torch.isnan(batch["loss"]) or torch.isinf(batch["loss"]):
-            # batch_idx и epoch доступны через self в _train_epoch
-            # используем batch_idx из внешнего цикла, но здесь его нет
-            # поэтому просто логируем без номера батча
             logger.warning(f"NaN/Inf loss detected")
             if self.skip_oom:
-                # Вместо continue возвращаем batch, чтобы не прерывать цикл
                 return batch
             else:
                 raise ValueError("Loss is NaN/Inf")
