@@ -109,6 +109,16 @@ def main(config):
     # epoch_len = None or len(dataloader) for epoch-based training
     epoch_len = config.trainer.get("epoch_len")
 
+
+    sample = train_dataset[0]
+    print(f"Sample shape: {sample['data_object'].shape}")
+    print(f"Sample dtype: {sample['data_object'].dtype}")
+    print(f"Sample min: {sample['data_object'].min():.3f}, max: {sample['data_object'].max():.3f}")
+
+    # Проверяем батч
+    sample_batch = next(iter(train_loader))
+    print(f"Batch shape: {sample_batch['data_object'].shape}")
+
     trainer = Trainer(
         model=model,
         criterion=loss_function,
