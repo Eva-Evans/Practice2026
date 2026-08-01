@@ -1,12 +1,11 @@
 import warnings
 
 import hydra
+import numpy as np
 import torch
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
-import numpy as np
-from torch.utils.data import WeightedRandomSampler
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 
 from src.datasets.data_utils import get_dataloaders
 
@@ -42,21 +41,19 @@ def main(config):
     # batch_transforms should be put on device
     dataloaders, batch_transforms = get_dataloaders(config, device)
 
-
     train_dataset = dataloaders["train"].dataset
     labels = np.array([sample[1] for sample in train_dataset.samples])
     class_count = np.bincount(labels, minlength=2)
     class_weights = class_count.sum() / (2.0 * class_count)
     sample_weights = class_weights[labels]
-    
+
     logger.info(f"Class counts [bonafide, spoof]: {class_count.tolist()}")
     logger.info(f"Class weights [bonafide, spoof]: {class_weights.tolist()}")
     sampler = WeightedRandomSampler(
         weights=torch.as_tensor(sample_weights, dtype=torch.double),
         num_samples=len(sample_weights),
-        replacement=True
+        replacement=True,
     )
-    
 
     old_loader = dataloaders["train"]
     dataloaders["train"] = DataLoader(
@@ -65,15 +62,14 @@ def main(config):
         sampler=sampler,
         num_workers=old_loader.num_workers,
         pin_memory=old_loader.pin_memory,
-        drop_last=old_loader.drop_last if hasattr(old_loader, 'drop_last') else False,
+        drop_last=old_loader.drop_last if hasattr(old_loader, "drop_last") else False,
     )
-
 
     # build model architecture, then print to console
     model = instantiate(config.model).to(device)
     logger.info(model)
-    sample_batch = next(iter(train_loader))
-    sample_input = sample_batch["data_object"].unsqueeze(1).to(device)  # [batch, 1, freq, time]
+    sample_batch = next(iter(dataloaders["train"]))
+    sample_input = sample_batch["data_object"].unsqueeze(1).to(device)
     with torch.no_grad():
         _ = model(sample_input)
     logger.info(f"Model materialized with input shape: {sample_input.shape}")
@@ -100,13 +96,13 @@ def main(config):
     # epoch_len = None or len(dataloader) for epoch-based training
     epoch_len = config.trainer.get("epoch_len")
 
-
     sample = train_dataset[0]
     print(f"Sample shape: {sample['data_object'].shape}")
     print(f"Sample dtype: {sample['data_object'].dtype}")
-    print(f"Sample min: {sample['data_object'].min():.3f}, max: {sample['data_object'].max():.3f}")
+    print(
+        f"Sample min: {sample['data_object'].min():.3f}, max: {sample['data_object'].max():.3f}"
+    )
 
-    # Проверяем батч
     sample_batch = next(iter(dataloaders["train"]))
     print(f"Batch shape: {sample_batch['data_object'].shape}")
 
