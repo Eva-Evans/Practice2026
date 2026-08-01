@@ -84,6 +84,28 @@ class Trainer(BaseTrainer):
             self.optimizer.step()
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
+        
+
+        if self.is_train:
+    
+    # Проверка градиентов у каждого слоя
+        if self._batch_idx % 10 == 0:
+            print("\n" + "="*60)
+            print("GRADIENT CHECK:")
+            for name, param in self.model.named_parameters():
+                if param.grad is not None:
+                    grad_norm = param.grad.norm().item()
+                    if grad_norm > 0:
+                        print(f"  {name}: grad_norm={grad_norm:.6f}")
+                    else:
+                        print(f"  {name}: grad_norm=0.000000 ⚠️")
+                else:
+                    print(f"  {name}: grad is None ⚠️")
+            print("="*60 + "\n")
+        
+        self._batch_idx += 1
+        self._clip_grad_norm()
+        self.optimizer.step()
 
         print(f"Loss requires_grad: {batch['loss'].requires_grad}")
         print(f"Loss grad_fn: {batch['loss'].grad_fn}")

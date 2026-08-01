@@ -66,6 +66,27 @@ def get_dataloaders(config, device):
     # dataset partitions init
     datasets = instantiate(config.datasets)  # instance transforms are defined inside
 
+    # Проверка распределения классов во всём датасете
+    if "train" in datasets:
+        train_dataset = datasets["train"]
+        all_labels = []
+        for i in range(len(train_dataset)):
+            sample = train_dataset[i]
+            if "labels" in sample:
+                all_labels.append(sample["labels"].item())
+        
+        if all_labels:
+            all_labels = torch.tensor(all_labels)
+            print("=" * 60)
+            print("DATASET CLASS DISTRIBUTION:")
+            print(f"  Total samples: {len(all_labels)}")
+            print(f"  Unique classes: {torch.unique(all_labels)}")
+            print(f"  Class 0: {torch.sum(all_labels == 0).item()}")
+            print(f"  Class 1: {torch.sum(all_labels == 1).item()}")
+            if torch.sum(all_labels == 1).item() == 0:
+                print("  ⚠️  WARNING: No samples of class 1 found in the dataset!")
+            print("=" * 60)
+
     # dataloaders init
     dataloaders = {}
     for dataset_partition in config.datasets.keys():
