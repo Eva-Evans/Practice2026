@@ -45,7 +45,7 @@ def main(config):
     # get function handles of loss and metrics
     loss_function = torch.nn.CrossEntropyLoss().to(device)
 
-    criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=2).to(device)
+    criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=4).to(device)
     # criterion_angular = None
 
     metrics = instantiate(config.metrics)

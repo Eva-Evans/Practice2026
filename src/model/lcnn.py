@@ -212,6 +212,13 @@ class LCNN(nn.Module):
         x = self.bn7(x)
 
         return x
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+
 
     # The key difference of the novel LCNN system is angular margin based softmax loss (A-softmax)
     # used for training the described architecture.
@@ -301,3 +308,4 @@ class AngularSoftmax(nn.Module):
         logits = logits * x_norm_orig
 
         return logits
+    
