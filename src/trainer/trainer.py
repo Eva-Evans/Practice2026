@@ -10,11 +10,18 @@ class Trainer(BaseTrainer):
     def __init__(self, model, criterion, optimizer, device, **kwargs):
         self.criterion_angular = kwargs.pop('criterion_angular', None)
         metrics = kwargs.pop('metrics', None)
-        super().__init__(model, criterion, optimizer, device, **kwargs)
+
+        super().__init__(
+            model=model,
+            criterion=criterion,
+            optimizer=optimizer,
+            device=device,
+            metrics=metrics,
+            **kwargs
+        )
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
-        self.criterion_angular = kwargs.get('criterion_angular', None)
 
     def process_batch(self, batch, metrics: MetricTracker):
         """
