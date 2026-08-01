@@ -160,7 +160,7 @@ class LCNN(nn.Module):
         x = self.mfm10(x)
         x = self.bn7(x)
         x = self.fc2(x)
-
+        
         return x
 
     def get_features(self, x):

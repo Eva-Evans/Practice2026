@@ -4,6 +4,9 @@ import hydra
 import torch
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
+import numpy as np
+from torch.utils.data import WeightedRandomSampler
+from torch.utils.data import DataLoader
 
 from src.datasets.data_utils import get_dataloaders
 
@@ -39,6 +42,43 @@ def main(config):
     # batch_transforms should be put on device
     dataloaders, batch_transforms = get_dataloaders(config, device)
 
+
+    train_dataset = dataloaders["train"].dataset
+    labels = []
+    for i in range(len(train_dataset)):
+        sample = train_dataset[i]
+        if "labels" in sample:
+            labels.append(sample["labels"])
+        elif "label" in sample:
+            labels.append(sample["label"])
+        else:
+            raise KeyError("sososos no key")
+    
+    labels = np.array(labels)
+    class_count = np.bincount(labels, minlength=2)
+    class_weights = class_count.sum() / (2.0 * class_count)
+    sample_weights = class_weights[labels]
+    
+    logger.info(f"Class counts [bonafide, spoof]: {class_count.tolist()}")
+    logger.info(f"Class weights [bonafide, spoof]: {class_weights.tolist()}")
+    sampler = WeightedRandomSampler(
+        weights=torch.as_tensor(sample_weights, dtype=torch.double),
+        num_samples=len(sample_weights),
+        replacement=True
+    )
+    
+
+    old_loader = dataloaders["train"]
+    dataloaders["train"] = DataLoader(
+        dataset=train_dataset,
+        batch_size=old_loader.batch_size,
+        sampler=sampler,
+        num_workers=old_loader.num_workers,
+        pin_memory=old_loader.pin_memory,
+        drop_last=old_loader.drop_last if hasattr(old_loader, 'drop_last') else False,
+    )
+
+
     # build model architecture, then print to console
     model = instantiate(config.model).to(device)
     logger.info(model)
@@ -51,6 +91,9 @@ def main(config):
 
     # get function handles of loss and metrics
     loss_function = torch.nn.CrossEntropyLoss().to(device)
+
+    class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
+    loss_function = torch.nn.CrossEntropyLoss(weight=class_weights_tensor).to(device)
 
     # criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=4).to(device)
     # criterion_angular = None

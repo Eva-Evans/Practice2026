@@ -2,6 +2,8 @@ import os
 
 import torch
 import torchaudio
+import librosa
+import numpy as np
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -25,31 +27,44 @@ class ASVSpoofDataset(Dataset):
                 label = 1 if parts[-1] == "bonafide" else 0
                 audio_path = os.path.join(audio_dir, file_id + ".flac")
                 self.samples.append((audio_path, label))
+        
+
+        
 
     def __getitem__(self, idx: int):
         if isinstance(idx, str):
             return self
         audio_path, label = self.samples[idx]
 
-        # you can use class method
-        # or you can use transform (or both)
         waveform, sr = torchaudio.load(audio_path)
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
+        
 
-        stft = torch.stft(
-            waveform, n_fft=self.n_fft, hop_length=self.hop_length, return_complex=True
+        audio_np = waveform.squeeze(0).numpy()
+
+        spec = librosa.stft(
+            audio_np,
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
+            window='blackman'
         )
-        spectrogram = torch.abs(stft)
-        spectrogram = torch.log(spectrogram + 1e-9)
+        spectrogram = np.abs(spec)
+        spectrogram = np.log(spectrogram + 1e-9)
+        spectrogram = torch.tensor(spectrogram, dtype=torch.float32)
 
-        if spectrogram.shape[2] > self.max_len:
-            spectrogram = spectrogram[:, :, : self.max_len]
-        elif spectrogram.shape[2] < self.max_len:
-            pad = self.max_len - spectrogram.shape[2]
+
+        if spectrogram.shape[1] > self.max_len:
+            spectrogram = spectrogram[:, :self.max_len]
+        elif spectrogram.shape[1] < self.max_len:
+            pad = self.max_len - spectrogram.shape[1]
             spectrogram = torch.nn.functional.pad(spectrogram, (0, pad))
 
         spectrogram = spectrogram.unsqueeze(0)
+
+        # if spectrogram.dim() == 5:
+        #     spectrogram = spectrogram.squeeze(2)
+
         return {"data_object": spectrogram, "labels": label}
 
     def __len__(self):
