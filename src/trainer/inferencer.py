@@ -123,7 +123,6 @@ class Inferencer(BaseTrainer):
             outputs = self.model(batch["data_object"])
         else:
             outputs = self.model(batch[0])
-        batch.update(outputs)
 
         batch["logits"] = outputs
 
@@ -147,7 +146,7 @@ class Inferencer(BaseTrainer):
             label = batch["labels"][i].clone()
             pred_label = logits.argmax(dim=-1)
             probs = torch.softmax(logits, dim=-1)
-            score = probs[0]
+            score = probs[0].item()
 
             output_id = current_id + i
 

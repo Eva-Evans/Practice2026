@@ -1,4 +1,5 @@
 import os
+import random
 
 import torch
 import torchaudio
@@ -12,34 +13,51 @@ class ASVSpoofDataset(Dataset):
     # bins and 20 filters.
     # Only the first 600 features for each file were used as LCNN input in all single systems.
     def __init__(
-        self, protocol_path, audio_dir, n_fft=512, hop_length=160, max_len=600, **kwargs
+        self,
+        protocol_path,
+        audio_dir,
+        n_fft=512,
+        hop_length=160,
+        max_len=600,
+        crop_mode="random",
+        **kwargs
     ):
         super().__init__()
         self.samples = []
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.max_len = max_len
+        self.crop_mode = crop_mode
 
         with open(protocol_path, "r") as f:
             for line in f:
                 parts = line.strip().split()
                 file_id = parts[1]
-                label = 1 if parts[-1] == "bonafide" else 0
+                label = 0 if parts[-1] == "bonafide" else 1
                 audio_path = os.path.join(audio_dir, file_id + ".flac")
-                self.samples.append((audio_path, label))
-        
+                self.samples.append((audio_path, label, file_id))
 
-        
+    def _pad_or_crop(self, spectrogram):
+        t = spectrogram.shape[1]
+        if t < self.max_len:
+            pad = self.max_len - t
+            spectrogram = torch.nn.functional.pad(spectrogram, (0, pad))
+        elif t > self.max_len:
+            if self.crop_mode == "random":
+                start = random.randint(0, t - self.max_len)
+            else:
+                start = (t - self.max_len) // 2
+            spectrogram = spectrogram[:, start : start + self.max_len]
+        return spectrogram
 
     def __getitem__(self, idx: int):
         if isinstance(idx, str):
             return self
-        audio_path, label = self.samples[idx]
+        audio_path, label, file_id = self.samples[idx]
 
         waveform, sr = torchaudio.load(audio_path)
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
-        
 
         audio_np = waveform.squeeze(0).numpy()
 
@@ -47,25 +65,21 @@ class ASVSpoofDataset(Dataset):
             audio_np,
             n_fft=self.n_fft,
             hop_length=self.hop_length,
-            window='blackman'
+            win_length=self.n_fft,
+            window="blackman",
         )
-        spectrogram = np.abs(spec)
-        spectrogram = np.log(spectrogram + 1e-9)
+        spectrogram = np.abs(spec) ** 2
+        spectrogram = np.log(spectrogram + 1e-6)
         spectrogram = torch.tensor(spectrogram, dtype=torch.float32)
 
-
-        if spectrogram.shape[1] > self.max_len:
-            spectrogram = spectrogram[:, :self.max_len]
-        elif spectrogram.shape[1] < self.max_len:
-            pad = self.max_len - spectrogram.shape[1]
-            spectrogram = torch.nn.functional.pad(spectrogram, (0, pad))
+        spectrogram = self._pad_or_crop(spectrogram)
 
         # spectrogram = spectrogram.unsqueeze(0)
 
         # if spectrogram.dim() == 5:
         #     spectrogram = spectrogram.squeeze(2)
 
-        return {"data_object": spectrogram, "labels": label}
+        return {"data_object": spectrogram, "labels": label, "file_id": file_id}
 
     def __len__(self):
         return len(self.samples)

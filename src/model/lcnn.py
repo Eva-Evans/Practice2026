@@ -104,10 +104,9 @@ class LCNN(nn.Module):
         # for final forcase
         # linear(in_features, out_features)
         # And dropout 0.75 was used to reduce overfitting
-        self.adaptive_pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.75)
-        self.fc1 = nn.Linear(32, 160)
+        self.fc1 = nn.LazyLinear(160, bias=False)
         self.mfm10 = MFM()
+        self.dropout = nn.Dropout(0.75)
         self.bn7 = nn.BatchNorm1d(80)
         self.fc2 = nn.Linear(80, num_classes)
 
@@ -156,12 +155,11 @@ class LCNN(nn.Module):
         x = self.mfm9(x)
         x = self.pool4(x)
 
-        x = self.adaptive_pool(x)
-        x = x.view(x.size(0), -1)
+        x = torch.flatten(x, 1)
 
-        x = self.dropout(x)
         x = self.fc1(x)
         x = self.mfm10(x)
+        x = self.dropout(x)
         x = self.bn7(x)
         x = self.fc2(x)
 
@@ -170,6 +168,10 @@ class LCNN(nn.Module):
     def get_features(self, x):
         if isinstance(x, dict):
             x = x["data_object"]
+        if x.dim() == 3:
+            x = x.unsqueeze(1)
+        elif x.dim() == 2:
+            x = x.unsqueeze(0).unsqueeze(1)
 
         x = self.conv1(x)
         x = self.mfm1(x)
@@ -208,11 +210,10 @@ class LCNN(nn.Module):
         x = self.mfm9(x)
         x = self.pool4(x)
 
-        x = self.adaptive_pool(x)
-        x = x.view(x.size(0), -1)
-        x = self.dropout(x)
+        x = torch.flatten(x, 1)
         x = self.fc1(x)
         x = self.mfm10(x)
+        x = self.dropout(x)
         x = self.bn7(x)
 
         return x

@@ -287,6 +287,10 @@ class BaseTrainer:
                     batch,
                     metrics=self.evaluation_metrics,
                 )
+            for met in self.metrics["inference"]:
+                if hasattr(met, "finalize"):
+                    self.evaluation_metrics.update(met.name, met.finalize())
+                    met.reset()
             self.writer.set_step(epoch * self.epoch_len, part)
             self._log_scalars(self.evaluation_metrics)
             self._log_batch(

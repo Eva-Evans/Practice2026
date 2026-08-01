@@ -73,7 +73,10 @@ class Trainer(BaseTrainer):
             metrics.update(loss_name, batch[loss_name].item())
 
         for met in metric_funcs:
-            metrics.update(met.name, met(**batch))
+            result = met(**batch)
+            if hasattr(met, "finalize"):
+                continue
+            metrics.update(met.name, result)
         return batch
 
     def _log_batch(self, batch_idx, batch, mode="train"):

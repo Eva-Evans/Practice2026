@@ -44,17 +44,7 @@ def main(config):
 
 
     train_dataset = dataloaders["train"].dataset
-    labels = []
-    for i in range(len(train_dataset)):
-        sample = train_dataset[i]
-        if "labels" in sample:
-            labels.append(sample["labels"])
-        elif "label" in sample:
-            labels.append(sample["label"])
-        else:
-            raise KeyError("sososos no key")
-    
-    labels = np.array(labels)
+    labels = np.array([sample[1] for sample in train_dataset.samples])
     class_count = np.bincount(labels, minlength=2)
     class_weights = class_count.sum() / (2.0 * class_count)
     sample_weights = class_weights[labels]
@@ -92,9 +82,6 @@ def main(config):
     # get function handles of loss and metrics
     loss_function = torch.nn.CrossEntropyLoss().to(device)
 
-    class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
-    loss_function = torch.nn.CrossEntropyLoss(weight=class_weights_tensor).to(device)
-
     # criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=4).to(device)
     # criterion_angular = None
 
@@ -116,7 +103,7 @@ def main(config):
     print(f"Sample min: {sample['data_object'].min():.3f}, max: {sample['data_object'].max():.3f}")
 
     # Проверяем батч
-    sample_batch = next(iter(train_loader))
+    sample_batch = next(iter(dataloaders["train"]))
     print(f"Batch shape: {sample_batch['data_object'].shape}")
 
     trainer = Trainer(
