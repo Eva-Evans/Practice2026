@@ -10,16 +10,14 @@ model:
   _target_: src.model.lcnn.LCNN
   num_classes: 2
 optimizer:
-  _target_: torch.optim.SGD
+  _target_: torch.optim.Adam
   lr: 0.0001
-  momentum: 0.9
-  weight_decay: 0.0005
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.StepLR
   gamma: 0.5
   step_size: 5
 loss_function:
-#  _target_: torch.nn.CrossEntropyLoss
+  _target_: torch.nn.CrossEntropyLoss
 trainer:
   log_step: 50
   n_epochs: 50

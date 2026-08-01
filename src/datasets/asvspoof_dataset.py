@@ -43,10 +43,6 @@ class ASVSpoofDataset(Dataset):
         spectrogram = torch.abs(stft)
         spectrogram = torch.log(spectrogram + 1e-9)
 
-        mean = spectrogram.mean()
-        std = spectrogram.std() + 1e-9
-        spectrogram = (spectrogram - mean) / std
-
         if spectrogram.shape[2] > self.max_len:
             spectrogram = spectrogram[:, :, : self.max_len]
         elif spectrogram.shape[2] < self.max_len:

@@ -33,8 +33,6 @@ class MFM(nn.Module):
         super().__init__()
 
     def forward(self, x):
-        if x.size(1) % 2 != 0:
-            print(f"WARNING: MFM got odd channel dimension: {x.size(1)}")
         return torch.max(x[:, : (x.size(1) // 2)], x[:, (x.size(1) // 2) :])
 
 
@@ -111,9 +109,7 @@ class LCNN(nn.Module):
         self.fc1 = nn.Linear(32, 160)
         self.mfm10 = MFM()
         self.bn7 = nn.BatchNorm1d(80)
-        # self.fc2 = nn.Linear(80, num_classes)
-
-        self._initialize_weights()
+        self.fc2 = nn.Linear(80, num_classes)
 
     def forward(self, x, **kwargs):
         if isinstance(x, dict):
@@ -159,11 +155,11 @@ class LCNN(nn.Module):
         x = self.adaptive_pool(x)
         x = x.view(x.size(0), -1)
 
-        x = self.dropout(x) 
+        x = self.dropout(x)
         x = self.fc1(x)
         x = self.mfm10(x)
         x = self.bn7(x)
-        # x = self.fc2(x)
+        x = self.fc2(x)
 
         return x
 
@@ -216,13 +212,6 @@ class LCNN(nn.Module):
         x = self.bn7(x)
 
         return x
-    def _initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-
 
     # The key difference of the novel LCNN system is angular margin based softmax loss (A-softmax)
     # used for training the described architecture.
@@ -267,7 +256,7 @@ class AngularSoftmax(nn.Module):
 
         # W
         self.weight = nn.Parameter(torch.FloatTensor(out_features, in_features))
-        nn.init.kaiming_normal_(self.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.xavier_uniform_(self.weight)
 
         self.lambda_min = lambda_min
         self.lambda_max = lambda_max
@@ -311,45 +300,4 @@ class AngularSoftmax(nn.Module):
         x_norm_orig = torch.norm(x, p=2, dim=1, keepdim=True)
         logits = logits * x_norm_orig
 
-        #print(f"logits min: {logits.min().item():.2f}, max: {logits.max().item():.2f}")
-        print(f"x_norm shape: {x_norm.shape}")
-        print(f"w_norm shape: {w_norm.shape}")
-        print(f"cos_theta range: [{cos_theta.min():.3f}, {cos_theta.max():.3f}]")
-        print(f"cos_theta_yi range: [{cos_theta_yi.min():.3f}, {cos_theta_yi.max():.3f}]")
-        print(f"logits range: [{logits.min():.3f}, {logits.max():.3f}]")
-    
-
-
         return logits
-
-
-class LCNNWithAngularSoftmax(nn.Module):
-    def __init__(self, num_classes=2, m=4, lambda_min=5.0, lambda_max=1000.0, **kwargs):
-        super().__init__()
-        
-        # Backbone без fc2
-        self.backbone = LCNN(num_classes=num_classes, **kwargs)
-        
-        # AngularSoftmax слой
-        self.angular = AngularSoftmax(
-            in_features=80, 
-            out_features=num_classes,
-            m=m,
-            lambda_min=lambda_min,
-            lambda_max=lambda_max
-        )
-        
-    def forward(self, x, labels=None):
-        # Получаем признаки
-        features = self.backbone(x)
-        
-        # Если есть метки - вычисляем логиты через AngularSoftmax
-        if labels is not None:
-            logits = self.angular(features, labels)
-            return logits
-        else:
-            # Для инференса возвращаем признаки
-            return features
-    
-    def get_features(self, x):
-        return self.backbone.get_features(x)

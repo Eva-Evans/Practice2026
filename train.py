@@ -6,7 +6,8 @@ from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
 from src.datasets.data_utils import get_dataloaders
-from src.model.lcnn import AngularSoftmax
+
+# from src.model.lcnn import AngularSoftmax
 from src.trainer import Trainer
 from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 
@@ -42,29 +43,10 @@ def main(config):
     model = instantiate(config.model).to(device)
     logger.info(model)
 
-    print("\n" + "="*60)
-    print("MODEL WEIGHTS STATISTICS:")
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            print(f"  {name}: mean={param.data.mean():.6f}, std={param.data.std():.6f}")
-            if torch.isnan(param).any():
-                print(f"    WARNING: NaN found in {name}")
-            if torch.isinf(param).any():
-                print(f"    WARNING: Inf found in {name}")
-    print("="*60 + "\n")
-
-    criterion_angular = AngularSoftmax(
-        in_features=80, 
-        out_features=2, 
-        m=4,
-        lambda_min=5.0,
-        lambda_max=1000.0
-    ).to(device)
-
     # get function handles of loss and metrics
-    # loss_function = torch.nn.CrossEntropyLoss().to(device)
+    loss_function = torch.nn.CrossEntropyLoss().to(device)
 
-    # criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=1).to(device)
+    # criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=4).to(device)
     # criterion_angular = None
 
     metrics = instantiate(config.metrics)
@@ -74,16 +56,13 @@ def main(config):
     optimizer = instantiate(config.optimizer, params=trainable_params)
     lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
 
-    criterion = torch.nn.CrossEntropyLoss().to(device)
-
     # epoch_len = number of iterations for iteration-based training
     # epoch_len = None or len(dataloader) for epoch-based training
     epoch_len = config.trainer.get("epoch_len")
 
     trainer = Trainer(
         model=model,
-        # criterion=loss_function,
-        criterion=criterion, 
+        criterion=loss_function,
         metrics=metrics,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
@@ -95,7 +74,7 @@ def main(config):
         writer=writer,
         batch_transforms=batch_transforms,
         skip_oom=config.trainer.get("skip_oom", True),
-        criterion_angular=criterion_angular,
+        # criterion_angular=criterion_angular,
         # criterion_angular=None,
     )
 

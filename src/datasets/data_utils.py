@@ -1,4 +1,3 @@
-import torch
 from itertools import repeat
 
 from hydra.utils import instantiate
@@ -66,27 +65,6 @@ def get_dataloaders(config, device):
     # dataset partitions init
     datasets = instantiate(config.datasets)  # instance transforms are defined inside
 
-    # Проверка распределения классов во всём датасете
-    if "train" in datasets:
-        train_dataset = datasets["train"]
-        all_labels = []
-        for i in range(len(train_dataset)):
-            sample = train_dataset[i]
-            if "labels" in sample:
-                all_labels.append(sample["labels"])
-        
-        if all_labels:
-            all_labels = torch.tensor(all_labels)
-            print("=" * 60)
-            print("DATASET CLASS DISTRIBUTION:")
-            print(f"  Total samples: {len(all_labels)}")
-            print(f"  Unique classes: {torch.unique(all_labels)}")
-            print(f"  Class 0: {torch.sum(all_labels == 0).item()}")
-            print(f"  Class 1: {torch.sum(all_labels == 1).item()}")
-            if torch.sum(all_labels == 1).item() == 0:
-                print("  ⚠️  WARNING: No samples of class 1 found in the dataset!")
-            print("=" * 60)
-
     # dataloaders init
     dataloaders = {}
     for dataset_partition in config.datasets.keys():
@@ -106,27 +84,5 @@ def get_dataloaders(config, device):
             worker_init_fn=set_worker_seed,
         )
         dataloaders[dataset_partition] = partition_dataloader
-
-
-    if "train" in dataloaders:
-        train_loader = dataloaders["train"]
-        test_batch = next(iter(train_loader))
-        data = test_batch["data_object"]
-        print("=" * 60)
-        print("DATA STATISTICS:")
-        print(f"  Data shape: {data.shape}")
-        print(f"  Data dtype: {data.dtype}")
-        print(f"  Data min: {data.min():.4f}")
-        print(f"  Data max: {data.max():.4f}")
-        print(f"  Data mean: {data.mean():.4f}")
-        print(f"  Data std: {data.std():.4f}")
-        
-        # Проверка меток
-        if "labels" in test_batch:
-            labels = test_batch["labels"]
-            print(f"  Labels shape: {labels.shape}")
-            print(f"  Unique labels: {torch.unique(labels)}")
-            print(f"  Label distribution: {torch.bincount(labels)}")
-        print("=" * 60)
 
     return dataloaders, batch_transforms
