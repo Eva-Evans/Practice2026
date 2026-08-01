@@ -63,52 +63,53 @@ class Trainer(BaseTrainer):
 
         batch["loss"] = all_losses
 
-        if self._batch_idx % 100 == 0:  # нужно добавить self._batch_idx
-            total_norm = 0
-            for p in self.model.parameters():
-                if p.grad is not None:
-                    param_norm = p.grad.data.norm(2)
-                    total_norm += param_norm.item() ** 2
-            total_norm = total_norm ** 0.5
-            print(f"  Gradient norm: {total_norm:.4f}")
-            
-            # Проверка на взрыв
-            if total_norm > 100:
-                print("  WARNING: Gradient explosion detected!")
-
-        self._batch_idx += 1 
-
         if self.is_train:
             batch["loss"].backward()
+            
+            # Проверка градиентов у каждого слоя (каждые 10 батчей)
+            if self._batch_idx % 10 == 0:
+                print("\n" + "="*60)
+                print("GRADIENT CHECK:")
+                has_gradients = False
+                for name, param in self.model.named_parameters():
+                    if param.grad is not None:
+                        grad_norm = param.grad.norm().item()
+                        if grad_norm > 0:
+                            print(f"  {name}: grad_norm={grad_norm:.6f}")
+                            has_gradients = True
+                        else:
+                            print(f"  {name}: grad_norm=0.000000 ⚠️")
+                    else:
+                        print(f"  {name}: grad is None ⚠️")
+                if not has_gradients:
+                    print("  ⚠️  WARNING: No gradients found in any layer!")
+                print("="*60 + "\n")
+            
+            # Проверка общей нормы градиентов (каждые 100 батчей)
+            if self._batch_idx % 100 == 0:
+                total_norm = 0
+                for p in self.model.parameters():
+                    if p.grad is not None:
+                        param_norm = p.grad.data.norm(2)
+                        total_norm += param_norm.item() ** 2
+                total_norm = total_norm ** 0.5
+                print(f"  Total gradient norm: {total_norm:.4f}")
+                
+                # Проверка на взрыв
+                if total_norm > 100:
+                    print("  WARNING: Gradient explosion detected!")
+            
             self._clip_grad_norm()
             self.optimizer.step()
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
-        
 
-        if self.is_train:
-    
-    # Проверка градиентов у каждого слоя
-        if self._batch_idx % 10 == 0:
-            print("\n" + "="*60)
-            print("GRADIENT CHECK:")
-            for name, param in self.model.named_parameters():
-                if param.grad is not None:
-                    grad_norm = param.grad.norm().item()
-                    if grad_norm > 0:
-                        print(f"  {name}: grad_norm={grad_norm:.6f}")
-                    else:
-                        print(f"  {name}: grad_norm=0.000000 ⚠️")
-                else:
-                    print(f"  {name}: grad is None ⚠️")
-            print("="*60 + "\n")
-        
-        self._batch_idx += 1
-        self._clip_grad_norm()
-        self.optimizer.step()
-
+        # Логирование для отладки (каждый батч)
         print(f"Loss requires_grad: {batch['loss'].requires_grad}")
         print(f"Loss grad_fn: {batch['loss'].grad_fn}")
+        
+        self._batch_idx += 1
+
         # update metrics for each loss (in case of multiple losses)
         for loss_name in self.config.writer.loss_names:
             metrics.update(loss_name, batch[loss_name].item())
