@@ -186,6 +186,7 @@ class BaseTrainer:
             if stop_process:  # early_stop
                 break
 
+    
     def _train_epoch(self, epoch):
         """
         Training logic for an epoch, including logging and evaluation on
@@ -233,6 +234,15 @@ class BaseTrainer:
                 )
                 self._log_scalars(self.train_metrics)
                 self._log_batch(batch_idx, batch)
+                
+                if self.writer:
+                    step = (epoch - 1) * self.epoch_len + batch_idx
+                    for name, param in self.model.named_parameters():
+                        if param.grad is not None:
+                            self.writer.add_histogram(f'gradients/{name}', param.grad, step)
+                            self.writer.add_scalar(f'grad_norm/{name}', param.grad.norm().item(), step)
+                        self.writer.add_histogram(f'weights/{name}', param.data, step)
+                
                 # we don't want to reset train metrics at the start of every epoch
                 # because we are interested in recent train metrics
                 last_train_metrics = self.train_metrics.result()

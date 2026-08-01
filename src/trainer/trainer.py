@@ -1,5 +1,9 @@
+import logging
+import torch
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
+
+logger = logging.getLogger(__name__)
 
 
 class Trainer(BaseTrainer):
@@ -49,6 +53,18 @@ class Trainer(BaseTrainer):
             all_losses = self.criterion(logits, batch["labels"])
 
         batch["loss"] = all_losses
+
+        # Исправлено: batch["loss"] вместо loss, добавлены self.epoch и batch_idx
+        if torch.isnan(batch["loss"]) or torch.isinf(batch["loss"]):
+            # batch_idx и epoch доступны через self в _train_epoch
+            # используем batch_idx из внешнего цикла, но здесь его нет
+            # поэтому просто логируем без номера батча
+            logger.warning(f"NaN/Inf loss detected")
+            if self.skip_oom:
+                # Вместо continue возвращаем batch, чтобы не прерывать цикл
+                return batch
+            else:
+                raise ValueError("Loss is NaN/Inf")
 
         if self.is_train:
             batch["loss"].backward()
