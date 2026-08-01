@@ -33,7 +33,7 @@ class MFM(nn.Module):
         super().__init__()
 
     def forward(self, x):
-        print(f"MFM input shape: {x.shape}")
+        # print(f"MFM input shape: {x.shape}")
         return torch.max(x[:, : (x.size(1) // 2)], x[:, (x.size(1) // 2) :])
 
 
@@ -111,6 +111,8 @@ class LCNN(nn.Module):
         self.mfm10 = MFM()
         self.bn7 = nn.BatchNorm1d(80)
         self.fc2 = nn.Linear(80, num_classes)
+
+        self._initialize_weights()
 
     def forward(self, x, **kwargs):
         if isinstance(x, dict):
@@ -308,7 +310,7 @@ class AngularSoftmax(nn.Module):
         x_norm_orig = torch.norm(x, p=2, dim=1, keepdim=True)
         logits = logits * x_norm_orig
 
-        print(f"logits min: {logits.min().item():.2f}, max: {logits.max().item():.2f}")
+        #print(f"logits min: {logits.min().item():.2f}, max: {logits.max().item():.2f}")
 
         return logits
     

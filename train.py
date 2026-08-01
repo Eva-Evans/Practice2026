@@ -42,10 +42,18 @@ def main(config):
     model = instantiate(config.model).to(device)
     logger.info(model)
 
-    # get function handles of loss and metrics
-    loss_function = torch.nn.CrossEntropyLoss().to(device)
+    criterion = AngularSoftmax(
+        in_features=80, 
+        out_features=2, 
+        m=4,
+        lambda_min=5.0,
+        lambda_max=1000.0
+    ).to(device)
 
-    criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=1).to(device)
+    # get function handles of loss and metrics
+    # loss_function = torch.nn.CrossEntropyLoss().to(device)
+
+    # criterion_angular = AngularSoftmax(in_features=80, out_features=2, m=1).to(device)
     # criterion_angular = None
 
     metrics = instantiate(config.metrics)
@@ -61,7 +69,8 @@ def main(config):
 
     trainer = Trainer(
         model=model,
-        criterion=loss_function,
+        # criterion=loss_function,
+        criterion=criterion, 
         metrics=metrics,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
@@ -73,7 +82,7 @@ def main(config):
         writer=writer,
         batch_transforms=batch_transforms,
         skip_oom=config.trainer.get("skip_oom", True),
-        criterion_angular=criterion_angular,
+        # criterion_angular=criterion_angular,
         # criterion_angular=None,
     )
 
